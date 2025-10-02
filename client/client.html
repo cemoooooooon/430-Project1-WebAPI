@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Our simple HTTP server</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  
+ <script>
+  // element grabber helper
+  const $ = (id) => document.getElementById(id);
+
+  // simple render
+  const render = (lines) => {
+    $('content').textContent = Array.isArray(lines) ? lines.join('\n') : String(lines);
+  };
+
+  const safeJSON = (text) => {
+    try { return JSON.parse(text || '{}'); } catch { return {}; }
+  };
+
+  //POST: /addUser
+  window.addEventListener('DOMContentLoaded', () => {
+    const nameForm = $('nameForm');
+    nameForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(nameForm);
+      const body = new URLSearchParams(formData).toString();
+
+      try {
+        const res = await fetch(nameForm.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body,
+        });
+
+        // 204
+        if (res.status === 204) {
+          render(['Status: 204', '(No Content) – existing user updated.']);
+          return;
+        }
+
+        const raw = await res.text();
+        console.log('RAW (POST /addUser):', raw);
+        const data = safeJSON(raw);
+
+        // 201 or 400 Bad Request
+        render([
+          `Status: ${res.status}`,
+          '',
+          JSON.stringify(data, null, 2),
+        ]);
+      } catch (err) {
+        render(`Error: ${err.message}`);
+      }
+    });
+
+    // GET/HEAD: /getUsers or /notReal
+    const userForm = $('userForm');
+    userForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const url = $('urlField').value;
+      const method = $('methodSelect').value.toUpperCase();
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Accept': 'application/json' },
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+
+        // HEAD: return headers/status only (no body)
+        if (method === 'HEAD') {
+          render([
+            `Status: ${res.status}`,
+            `Method: ${method}`,
+            `Content-Type: ${contentType}`,
+          ]);
+          return;
+        }
+
+        // GET: parse JSON body and display
+        const raw = await res.text();
+        console.log(`RAW (${method} ${url}):`, raw);
+        const data = safeJSON(raw);
+
+        if (url === '/getUsers' && data.users) {
+          render([
+            `Status: ${res.status}`,
+            '',
+            'users:',
+            JSON.stringify(data.users, null, 2),
+          ]);
+        } else {
+          render([
+            `Status: ${res.status}`,
+            '',
+            JSON.stringify(data, null, 2),
+          ]);
+        }
+      } catch (err) {
+        render(`Error: ${err.message}`);
+      }
+    });
+  });
+</script>
+
+</head>
+<body>
+  <section id="top">
+    <h3>POST Status Code Tests</h3>
+    <form id="nameForm" action="/addUser" method="post">
+      <label for="name">Name: </label>
+      <input id="nameField" type="text" name="name" />
+      <label for="age">Age: </label>
+      <input id="ageField" type="number" name="age" min="0" max="100" step="1"/>
+      <input type="submit" value="Add User" />
+    </form>
+    <form id="userForm" action="/getUsers" method="get">
+      <select id='urlField'>
+        <option value='/getUsers'>/getUsers</option>
+        <option value='/notReal'>/notReal</option>
+      </select>
+      <select id="methodSelect">
+        <option value="get">GET</option>
+        <option value="head">HEAD</option>
+      </select>
+      <input type="submit" value="Get User" />
+    </form>
+  </section>
+  <section id="content">
+  </section>
+</body>
+</html>
