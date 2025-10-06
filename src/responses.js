@@ -1,11 +1,12 @@
-"use strict";
-
 const fs = require("fs");
 const path = require("path");
 const querystring = require("querystring");
 
-const users = {};
+// load our pokemon data
+const datasetPath = path.join(__dirname, "../data/pokedex.json");
+const pokedex = JSON.parse(fs.readFileSync(datasetPath, "utf8"));
 
+// write helpers
 const writeJSON = (res, status, obj) => {
   const body = JSON.stringify(obj);
   res.writeHead(status, {
@@ -16,7 +17,10 @@ const writeJSON = (res, status, obj) => {
 };
 
 const writeHeadOnly = (res, status) => {
-  res.writeHead(status, { "Content-Type": "application/json" });
+  res.writeHead(status, {
+    "Content-Type": "application/json",
+    "Content-Length": 0,
+  });
   res.end();
 };
 
@@ -67,16 +71,6 @@ const getCSS = (req, res) => {
   }
 };
 
-// with GET -> 200 + results even if empty
-const getUsersGET = (req, res) => {
-  writeJSON(res, 200, { users });
-};
-
-// with HEAD -> 200 without results (no body)
-const getUsersHEAD = (req, res) => {
-  writeHeadOnly(res, 200);
-};
-
 // with GET -> 404 + JSON error
 const notRealGET = (req, res) => {
   writeJSON(res, 404, {
@@ -103,51 +97,253 @@ const notFoundHEAD = (req, res) => {
   writeHeadOnly(res, 404);
 };
 
-// /addUser with POST:
-// 201: creating a new user
-// 204: when updating the age of an existing user (no body)
-// 400: if missing name or age
-const addUserPOST = async (req, res) => {
-  try {
-    const body = await readBody(req);
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const ageRaw = body.age;
-    const hasAge =
-      ageRaw !== undefined && ageRaw !== null && String(ageRaw).trim() !== "";
-    if (!name || !hasAge) {
-      return writeJSON(res, 400, {
-        message: "Name and age are both required.",
-        id: "missingParams",
-      });
-    }
+// pokemon (GET/HEAD)
+const getPokemonGET = (req, res, urlObj) => {
+  const { query } = urlObj;
+  let results = pokedex;
 
-    const age = Number(ageRaw);
-    // if the user exists, update age -> 204 No Content
-    if (users[name]) {
-      users[name].age = age;
-      res.writeHead(204); // no body
-      return res.end();
-    }
+  // filter by type
+  if (query.type) {
+    const t = String(query.type).toLowerCase();
+    results = results.filter(
+      (p) =>
+        Array.isArray(p.type) &&
+        p.type.some((x) => String(x).toLowerCase() === t)
+    );
+  }
 
-    // otherwise create new -> 201 with message
-    users[name] = { name, age };
-    return writeJSON(res, 201, { message: "User created successfully." });
-  } catch (e) {
-    return writeJSON(res, 500, {
-      message: "Internal Server Error.",
-      id: "internalError",
+  // name contains search
+  if (query.search) {
+    const s = String(query.search).toLowerCase();
+    results = results.filter((p) => String(p.name).toLowerCase().includes(s));
+  }
+
+  // limit & offset
+  const offset = Number(query.offset || 0);
+  const limit = Math.max(0, Math.min(100, Number(query.limit || 50)));
+  const sliced = results.slice(offset, offset + limit);
+
+  return writeJSON(res, 200, {
+    count: results.length,
+    offset,
+    limit,
+    data: sliced,
+  });
+};
+
+const getPokemonHEAD = (req, res) => writeHeadOnly(res, 200);
+
+// pokemon/by (GET/HEAD)
+// accepts id or name
+const getPokemonByGET = (req, res, urlObj) => {
+  const { id, name } = urlObj.query;
+
+  if (id == null && !name) {
+    return writeJSON(res, 400, {
+      message: "Provide id or name",
+      id: "badRequest",
     });
   }
+
+  let found = null;
+
+  if (id != null) {
+    found = pokedex.find((p) => String(p.id) === String(id));
+  } else if (name) {
+    const n = String(name).toLowerCase();
+    found = pokedex.find((p) => String(p.name).toLowerCase() === n);
+  }
+
+  if (!found) {
+    return writeJSON(res, 404, {
+      message: "Not found",
+      id: "notFound",
+    });
+  }
+
+  return writeJSON(res, 200, found);
+};
+
+const getPokemonByHEAD = (req, res) => writeHeadOnly(res, 200);
+
+// /pokemon/update with POST:
+// edits an existing pokemon in memory and returns 204 on success
+// content-type: application/json or application/x-www-form-urlencoded
+const updatePokemonPOST = (req, res) => {
+  const collectBody = () =>
+    new Promise((resolve, reject) => {
+      let raw = "";
+      req.on("data", (chunk) => {
+        raw += chunk;
+      });
+      req.on("end", () => resolve(raw));
+      req.on("error", reject);
+    });
+
+  const badRequest = (msg = "Invalid request body", id = "badRequest") => {
+    writeJSON(res, 400, { message: msg, id });
+    return null;
+  };
+
+  const notFound = (msg = "Target resource not found", id = "notFound") => {
+    writeJSON(res, 404, { message: msg, id });
+    return null;
+  };
+
+  const success204 = () => {
+    writeHeadOnly(res, 204);
+    return null;
+  };
+
+  // only allow json or urlencoded
+  const ctype = (req.headers["content-type"] || "").toLowerCase();
+  const isJSON = ctype.includes("application/json");
+  const isForm = ctype.includes("application/x-www-form-urlencoded");
+  if (!isJSON && !isForm) {
+    return badRequest(
+      "Content-Type must be application/json or application/x-www-form-urlencoded."
+    );
+  }
+
+  return collectBody()
+    .then((raw) => {
+      let bodyObj;
+      try {
+        bodyObj = isJSON
+          ? JSON.parse(raw || "{}")
+          : querystring.parse(raw || "");
+      } catch (e) {
+        return badRequest("Body could not be parsed as valid JSON/urlencoded.");
+      }
+
+      const id = bodyObj && bodyObj.id;
+      if (!id || String(id).trim() === "") {
+        return badRequest("Missing required field: id");
+      }
+
+      const idx = pokedex.findIndex((p) => String(p.id) === String(id));
+      if (idx === -1) {
+        return notFound("No Pokémon found with that id :(");
+      }
+
+      const updates = { ...bodyObj };
+      delete updates.id;
+      if (Object.keys(updates).length === 0) {
+        return badRequest(
+          "Provide at least one field to update besides the id."
+        );
+      }
+
+      Object.assign(pokedex[idx], updates);
+      return success204();
+    })
+    .catch(() => badRequest("Unable to read request body :("));
+};
+
+// /pokemon/add (POST):
+// creates a new pokemon
+// requires: id (number) and name (string)
+const addPokemonPOST = (req, res) => {
+  const badRequest = (msg = "Invalid request body", id = "badRequest") => {
+    writeJSON(res, 400, { message: msg, id });
+    return null;
+  };
+  const success201 = (obj) => {
+    writeJSON(res, 201, obj);
+    return null;
+  };
+
+  // only allow JSON or urlencoded
+  const ctype = (req.headers["content-type"] || "").toLowerCase();
+  const isJSON = ctype.includes("application/json");
+  const isForm = ctype.includes("application/x-www-form-urlencoded");
+  if (!isJSON && !isForm) {
+    return badRequest(
+      "Content-Type must be application/json or application/x-www-form-urlencoded."
+    );
+  }
+
+  return readBody(req)
+    .then((body) => {
+      // requires id and name
+      const idRaw = body && body.id;
+      const nameRaw =
+        body && typeof body.name === "string" ? body.name.trim() : "";
+      if (!idRaw || !nameRaw) {
+        return badRequest("Missing required fields: id and name");
+      }
+
+      const id = Number(idRaw);
+      if (Number.isNaN(id)) {
+        return badRequest("Field 'id' must be a number.");
+      }
+
+      // unique by id
+      if (pokedex.find((p) => String(p.id) === String(id))) {
+        return badRequest("A Pokémon with that id already exists.");
+      }
+
+      // types: accept array / comma separated string
+      let types = [];
+      if (Array.isArray(body.type)) {
+        types = body.type.map((t) => String(t).trim()).filter(Boolean);
+      } else if (typeof body.type === "string") {
+        types = body.type
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+
+      // create minimal record
+      const record = { id, name: nameRaw };
+      if (types.length) record.type = types;
+
+      pokedex.push(record);
+      return success201({
+        message: "Pokémon created successfully!",
+        data: record,
+      });
+    })
+    .catch(() => badRequest("Unable to read request body."));
+};
+
+// /types (GET/HEAD)
+// returns unique pokemon types from the dataset
+const getTypesGET = (req, res) => {
+  const seen = Object.create(null);
+
+  pokedex.forEach((p) => {
+    if (Array.isArray(p.type)) {
+      p.type.forEach((t) => {
+        const k = String(t);
+        if (k) seen[k] = true;
+      });
+    }
+  });
+
+  const types = Object.keys(seen).sort((a, b) => a.localeCompare(b));
+  writeJSON(res, 200, { count: types.length, types });
+  return null; // to make eslint's consistent-return happy
+};
+
+const getTypesHEAD = (req, res) => {
+  writeHeadOnly(res, 200);
+  return null;
 };
 
 module.exports = {
   getClient,
   getCSS,
-  getUsersGET,
-  getUsersHEAD,
   notRealGET,
   notRealHEAD,
-  addUserPOST,
   notFoundGET,
   notFoundHEAD,
+  getPokemonGET,
+  getPokemonHEAD,
+  getPokemonByGET,
+  getPokemonByHEAD,
+  updatePokemonPOST,
+  addPokemonPOST,
+  getTypesGET,
+  getTypesHEAD,
 };
