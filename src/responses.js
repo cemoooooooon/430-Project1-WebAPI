@@ -1,72 +1,71 @@
-const fs = require("fs");
-const path = require("path");
-const querystring = require("querystring");
+const fs = require('fs');
+const path = require('path');
+const querystring = require('querystring');
 
 // load our pokemon data
-const datasetPath = path.join(__dirname, "../data/pokedex.json");
-const pokedex = JSON.parse(fs.readFileSync(datasetPath, "utf8"));
+const datasetPath = path.join(__dirname, '../data/pokedex.json');
+const pokedex = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
 
 // write helpers
 const writeJSON = (res, status, obj) => {
   const body = JSON.stringify(obj);
   res.writeHead(status, {
-    "Content-Type": "application/json",
-    "Content-Length": Buffer.byteLength(body),
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body),
   });
   res.end(body);
 };
 
 const writeHeadOnly = (res, status) => {
   res.writeHead(status, {
-    "Content-Type": "application/json",
-    "Content-Length": 0,
+    'Content-Type': 'application/json',
+    'Content-Length': 0,
   });
   res.end();
 };
 
 // parse POST body
-const readBody = (req) =>
-  new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on("data", (c) => chunks.push(c));
-    req.on("end", () => {
-      const raw = Buffer.concat(chunks).toString();
-      const type = req.headers["content-type"] || "";
-      try {
-        if (type.includes("application/json")) {
-          resolve(JSON.parse(raw || "{}"));
-        } else {
-          resolve(querystring.parse(raw));
-        }
-      } catch (e) {
-        reject(e);
+const readBody = (req) => new Promise((resolve, reject) => {
+  const chunks = [];
+  req.on('data', (c) => chunks.push(c));
+  req.on('end', () => {
+    const raw = Buffer.concat(chunks).toString();
+    const type = req.headers['content-type'] || '';
+    try {
+      if (type.includes('application/json')) {
+        resolve(JSON.parse(raw || '{}'));
+      } else {
+        resolve(querystring.parse(raw));
       }
-    });
-    req.on("error", reject);
+    } catch (e) {
+      reject(e);
+    }
   });
+  req.on('error', reject);
+});
 
 const getClient = (req, res) => {
   try {
-    const html = fs.readFileSync(path.join(__dirname, "../client/client.html"));
-    res.writeHead(200, { "Content-Type": "text/html" });
+    const html = fs.readFileSync(path.join(__dirname, '../client/client.html'));
+    res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(html);
   } catch (err) {
     writeJSON(res, 500, {
-      message: "Unable to load client.html",
-      id: "internalError",
+      message: 'Unable to load client.html',
+      id: 'internalError',
     });
   }
 };
 
 const getCSS = (req, res) => {
   try {
-    const css = fs.readFileSync(path.join(__dirname, "../client/style.css"));
-    res.writeHead(200, { "Content-Type": "text/css" });
+    const css = fs.readFileSync(path.join(__dirname, '../client/style.css'));
+    res.writeHead(200, { 'Content-Type': 'text/css' });
     res.end(css);
   } catch (err) {
     writeJSON(res, 500, {
-      message: "Unable to load style.css",
-      id: "internalError",
+      message: 'Unable to load style.css',
+      id: 'internalError',
     });
   }
 };
@@ -74,8 +73,8 @@ const getCSS = (req, res) => {
 // with GET -> 404 + JSON error
 const notRealGET = (req, res) => {
   writeJSON(res, 404, {
-    message: "The page you are looking for was not found.",
-    id: "notFound",
+    message: 'The page you are looking for was not found.',
+    id: 'notFound',
   });
 };
 
@@ -87,8 +86,8 @@ const notRealHEAD = (req, res) => {
 // any other page with GET -> 404 + JSON error
 const notFoundGET = (req, res) => {
   writeJSON(res, 404, {
-    message: "The page you are looking for was not found.",
-    id: "notFound",
+    message: 'The page you are looking for was not found.',
+    id: 'notFound',
   });
 };
 
@@ -106,9 +105,8 @@ const getPokemonGET = (req, res, urlObj) => {
   if (query.type) {
     const t = String(query.type).toLowerCase();
     results = results.filter(
-      (p) =>
-        Array.isArray(p.type) &&
-        p.type.some((x) => String(x).toLowerCase() === t)
+      (p) => Array.isArray(p.type)
+        && p.type.some((x) => String(x).toLowerCase() === t),
     );
   }
 
@@ -140,8 +138,8 @@ const getPokemonByGET = (req, res, urlObj) => {
 
   if (id == null && !name) {
     return writeJSON(res, 400, {
-      message: "Provide id or name",
-      id: "badRequest",
+      message: 'Provide id or name',
+      id: 'badRequest',
     });
   }
 
@@ -156,8 +154,8 @@ const getPokemonByGET = (req, res, urlObj) => {
 
   if (!found) {
     return writeJSON(res, 404, {
-      message: "Not found",
-      id: "notFound",
+      message: 'Not found',
+      id: 'notFound',
     });
   }
 
@@ -170,22 +168,21 @@ const getPokemonByHEAD = (req, res) => writeHeadOnly(res, 200);
 // edits an existing pokemon in memory and returns 204 on success
 // content-type: application/json or application/x-www-form-urlencoded
 const updatePokemonPOST = (req, res) => {
-  const collectBody = () =>
-    new Promise((resolve, reject) => {
-      let raw = "";
-      req.on("data", (chunk) => {
-        raw += chunk;
-      });
-      req.on("end", () => resolve(raw));
-      req.on("error", reject);
+  const collectBody = () => new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
     });
+    req.on('end', () => resolve(raw));
+    req.on('error', reject);
+  });
 
-  const badRequest = (msg = "Invalid request body", id = "badRequest") => {
+  const badRequest = (msg = 'Invalid request body', id = 'badRequest') => {
     writeJSON(res, 400, { message: msg, id });
     return null;
   };
 
-  const notFound = (msg = "Target resource not found", id = "notFound") => {
+  const notFound = (msg = 'Target resource not found', id = 'notFound') => {
     writeJSON(res, 404, { message: msg, id });
     return null;
   };
@@ -196,12 +193,12 @@ const updatePokemonPOST = (req, res) => {
   };
 
   // only allow json or urlencoded
-  const ctype = (req.headers["content-type"] || "").toLowerCase();
-  const isJSON = ctype.includes("application/json");
-  const isForm = ctype.includes("application/x-www-form-urlencoded");
+  const ctype = (req.headers['content-type'] || '').toLowerCase();
+  const isJSON = ctype.includes('application/json');
+  const isForm = ctype.includes('application/x-www-form-urlencoded');
   if (!isJSON && !isForm) {
     return badRequest(
-      "Content-Type must be application/json or application/x-www-form-urlencoded."
+      'Content-Type must be application/json or application/x-www-form-urlencoded.',
     );
   }
 
@@ -210,41 +207,41 @@ const updatePokemonPOST = (req, res) => {
       let bodyObj;
       try {
         bodyObj = isJSON
-          ? JSON.parse(raw || "{}")
-          : querystring.parse(raw || "");
+          ? JSON.parse(raw || '{}')
+          : querystring.parse(raw || '');
       } catch (e) {
-        return badRequest("Body could not be parsed as valid JSON/urlencoded.");
+        return badRequest('Body could not be parsed as valid JSON/urlencoded.');
       }
 
       const id = bodyObj && bodyObj.id;
-      if (!id || String(id).trim() === "") {
-        return badRequest("Missing required field: id");
+      if (!id || String(id).trim() === '') {
+        return badRequest('Missing required field: id');
       }
 
       const idx = pokedex.findIndex((p) => String(p.id) === String(id));
       if (idx === -1) {
-        return notFound("No Pokémon found with that id :(");
+        return notFound('No Pokémon found with that id :(');
       }
 
       const updates = { ...bodyObj };
       delete updates.id;
       if (Object.keys(updates).length === 0) {
         return badRequest(
-          "Provide at least one field to update besides the id."
+          'Provide at least one field to update besides the id.',
         );
       }
 
       Object.assign(pokedex[idx], updates);
       return success204();
     })
-    .catch(() => badRequest("Unable to read request body :("));
+    .catch(() => badRequest('Unable to read request body :('));
 };
 
 // /pokemon/add (POST):
 // creates a new pokemon
 // requires: id (number) and name (string)
 const addPokemonPOST = (req, res) => {
-  const badRequest = (msg = "Invalid request body", id = "badRequest") => {
+  const badRequest = (msg = 'Invalid request body', id = 'badRequest') => {
     writeJSON(res, 400, { message: msg, id });
     return null;
   };
@@ -254,12 +251,12 @@ const addPokemonPOST = (req, res) => {
   };
 
   // only allow JSON or urlencoded
-  const ctype = (req.headers["content-type"] || "").toLowerCase();
-  const isJSON = ctype.includes("application/json");
-  const isForm = ctype.includes("application/x-www-form-urlencoded");
+  const ctype = (req.headers['content-type'] || '').toLowerCase();
+  const isJSON = ctype.includes('application/json');
+  const isForm = ctype.includes('application/x-www-form-urlencoded');
   if (!isJSON && !isForm) {
     return badRequest(
-      "Content-Type must be application/json or application/x-www-form-urlencoded."
+      'Content-Type must be application/json or application/x-www-form-urlencoded.',
     );
   }
 
@@ -267,10 +264,9 @@ const addPokemonPOST = (req, res) => {
     .then((body) => {
       // requires id and name
       const idRaw = body && body.id;
-      const nameRaw =
-        body && typeof body.name === "string" ? body.name.trim() : "";
+      const nameRaw = body && typeof body.name === 'string' ? body.name.trim() : '';
       if (!idRaw || !nameRaw) {
-        return badRequest("Missing required fields: id and name");
+        return badRequest('Missing required fields: id and name');
       }
 
       const id = Number(idRaw);
@@ -280,16 +276,16 @@ const addPokemonPOST = (req, res) => {
 
       // unique by id
       if (pokedex.find((p) => String(p.id) === String(id))) {
-        return badRequest("A Pokémon with that id already exists.");
+        return badRequest('A Pokémon with that id already exists.');
       }
 
       // types: accept array / comma separated string
       let types = [];
       if (Array.isArray(body.type)) {
         types = body.type.map((t) => String(t).trim()).filter(Boolean);
-      } else if (typeof body.type === "string") {
+      } else if (typeof body.type === 'string') {
         types = body.type
-          .split(",")
+          .split(',')
           .map((t) => t.trim())
           .filter(Boolean);
       }
@@ -300,14 +296,14 @@ const addPokemonPOST = (req, res) => {
 
       pokedex.push(record);
       return success201({
-        message: "Pokémon created successfully!",
+        message: 'Pokémon created successfully!',
         data: record,
       });
     })
-    .catch(() => badRequest("Unable to read request body."));
+    .catch(() => badRequest('Unable to read request body.'));
 };
 
-// /types (GET/HEAD)
+// /types (GET/HEAD):
 // returns unique pokemon types from the dataset
 const getTypesGET = (req, res) => {
   const seen = Object.create(null);
@@ -324,6 +320,29 @@ const getTypesGET = (req, res) => {
   const types = Object.keys(seen).sort((a, b) => a.localeCompare(b));
   writeJSON(res, 200, { count: types.length, types });
   return null; // to make eslint's consistent-return happy
+};
+
+// /pokemon/random (GET/HEAD):
+// Returns n number of random pokemon (default 1)
+const getPokemonRandomGET = (req, res, urlObj) => {
+  const q = urlObj && urlObj.query ? urlObj.query : {};
+  const nRaw = q.count;
+  let n = Number(nRaw);
+  if (Number.isNaN(n) || n <= 0) n = 1;
+  // cap to something reasonable
+  const limit = Math.min(50, Math.max(1, n));
+
+  // shuffle copy
+  const shuffled = pokedex.slice().sort(() => Math.random() - 0.5);
+  const data = shuffled.slice(0, limit);
+
+  writeJSON(res, 200, { count: data.length, data });
+  return null;
+};
+
+const getPokemonRandomHEAD = (req, res) => {
+  writeHeadOnly(res, 200);
+  return null;
 };
 
 const getTypesHEAD = (req, res) => {
@@ -346,4 +365,6 @@ module.exports = {
   addPokemonPOST,
   getTypesGET,
   getTypesHEAD,
+  getPokemonRandomGET,
+  getPokemonRandomHEAD,
 };

@@ -53,6 +53,19 @@
     </div>
   </fieldset>
 
+  <!-- GET /pokemon/random -->
+<fieldset>
+  <legend>GET/HEAD /pokemon/random (random selection)</legend>
+  <div class="row">
+    <label for="randCount">count=</label>
+    <input id="randCount" type="number" value="1" min="1" />
+    <button id="btnRandomGet">GET</button>
+    <button id="btnRandomHead">HEAD</button>
+  </div>
+  <p class="note">If omitted or invalid, the server defaults to 1. The server count caps at 50.</p>
+</fieldset>
+
+
   <!-- POST /pokemon/add -->
   <fieldset>
     <legend>POST /pokemon/add (create)</legend>
@@ -195,6 +208,23 @@
       const res = await HEAD('/types');
       show(res);
     };
+
+    // /pokemon/random
+  document.getElementById('btnRandomGet').onclick = async () => {
+    var n = document.getElementById('randCount').value;
+    var qs = new URLSearchParams();
+    if (n !== '') qs.set('count', n);
+    var res = await GET('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : ''));
+    show(res);
+  };
+
+  document.getElementById('btnRandomHead').onclick = async () => {
+    var n = document.getElementById('randCount').value;
+    var qs = new URLSearchParams();
+    if (n !== '') qs.set('count', n);
+    var res = await HEAD('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : ''));
+    show(res);
+  };
 
     // POST /pokemon/add
     $('btnAdd').onclick = async () => {

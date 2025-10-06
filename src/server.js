@@ -15,6 +15,8 @@ const {
   addPokemonPOST,
   getTypesGET,
   getTypesHEAD,
+  getPokemonRandomGET,
+  getPokemonRandomHEAD,
 } = require('./responses');
 
 const PORT = process.env.PORT || 3000;
@@ -60,6 +62,12 @@ const onRequest = (request, response) => {
   if (pathname === '/types') {
     if (method === 'GET') return getTypesGET(request, response);
     if (method === 'HEAD') return getTypesHEAD(request, response);
+  }
+
+  // /pokemon/random: return certain number of random pokes from the dataset
+  if (pathname === '/pokemon/random') {
+    if (method === 'GET') return getPokemonRandomGET(request, response, parsed);
+    if (method === 'HEAD') return getPokemonRandomHEAD(request, response);
   }
 
   // any other page -> 404
