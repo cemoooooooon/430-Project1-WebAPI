@@ -6,18 +6,27 @@ const querystring = require('querystring');
 const datasetPath = path.join(__dirname, '../data/pokedex.json');
 const pokedex = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
 
-// write helpers
-const writeJSON = (res, status, obj) => {
+// write helper
+const respondJSON = (req, res, status, obj) => {
   const body = JSON.stringify(obj);
+
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
   });
-  res.end(body);
+
+  if (req.method === 'HEAD') {
+    // HEAD request
+    res.end();
+  } else {
+    // GET request
+    res.end(body);
+  }
 };
 
-const writeHeadOnly = (res, status) => {
-  res.writeHead(status, {
+// helper for 204 responses
+const respondNoContent = (res) => {
+  res.writeHead(204, {
     'Content-Type': 'application/json',
     'Content-Length': 0,
   });
@@ -50,7 +59,7 @@ const getClient = (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(html);
   } catch (err) {
-    writeJSON(res, 500, {
+    respondJSON(req, res, 500, {
       message: 'Unable to load client.html',
       id: 'internalError',
     });
@@ -63,41 +72,23 @@ const getCSS = (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/css' });
     res.end(css);
   } catch (err) {
-    writeJSON(res, 500, {
+    respondJSON(req, res, 500, {
       message: 'Unable to load style.css',
       id: 'internalError',
     });
   }
 };
 
-// with GET -> 404 + JSON error
-const notRealGET = (req, res) => {
-  writeJSON(res, 404, {
+// any other page with GET/HEAD -> 404 + JSON error
+const notFound = (req, res) => {
+  respondJSON(req, res, 404, {
     message: 'The page you are looking for was not found.',
     id: 'notFound',
   });
 };
 
-// with HEAD -> 404 without body
-const notRealHEAD = (req, res) => {
-  writeHeadOnly(res, 404);
-};
-
-// any other page with GET -> 404 + JSON error
-const notFoundGET = (req, res) => {
-  writeJSON(res, 404, {
-    message: 'The page you are looking for was not found.',
-    id: 'notFound',
-  });
-};
-
-// any other page with HEAD -> 404, no body
-const notFoundHEAD = (req, res) => {
-  writeHeadOnly(res, 404);
-};
-
-// pokemon (GET/HEAD)
-const getPokemonGET = (req, res, urlObj) => {
+// get all pokemon (GET + HEAD)
+const getPokemon = (req, res, urlObj) => {
   const { query } = urlObj;
   let results = pokedex;
 
@@ -121,7 +112,7 @@ const getPokemonGET = (req, res, urlObj) => {
   const limit = Math.max(0, Math.min(100, Number(query.limit || 50)));
   const sliced = results.slice(offset, offset + limit);
 
-  return writeJSON(res, 200, {
+  return respondJSON(req, res, 200, {
     count: results.length,
     offset,
     limit,
@@ -129,15 +120,13 @@ const getPokemonGET = (req, res, urlObj) => {
   });
 };
 
-const getPokemonHEAD = (req, res) => writeHeadOnly(res, 200);
-
-// pokemon/by (GET/HEAD)
+// pokemon/by (GET + HEAD)
 // accepts id or name
-const getPokemonByGET = (req, res, urlObj) => {
+const getPokemonBy = (req, res, urlObj) => {
   const { id, name } = urlObj.query;
 
   if (id == null && !name) {
-    return writeJSON(res, 400, {
+    return respondJSON(req, res, 400, {
       message: 'Provide id or name',
       id: 'badRequest',
     });
@@ -153,16 +142,51 @@ const getPokemonByGET = (req, res, urlObj) => {
   }
 
   if (!found) {
-    return writeJSON(res, 404, {
+    return respondJSON(req, res, 404, {
       message: 'Not found',
       id: 'notFound',
     });
   }
 
-  return writeJSON(res, 200, found);
+  return respondJSON(req, res, 200, found);
 };
 
-const getPokemonByHEAD = (req, res) => writeHeadOnly(res, 200);
+// /types (GET + HEAD):
+// returns unique pokemon types from the dataset
+const getTypes = (req, res) => {
+  const seen = Object.create(null);
+
+  pokedex.forEach((p) => {
+    if (Array.isArray(p.type)) {
+      p.type.forEach((t) => {
+        const k = String(t);
+        if (k) seen[k] = true;
+      });
+    }
+  });
+
+  const types = Object.keys(seen).sort((a, b) => a.localeCompare(b));
+  respondJSON(req, res, 200, { count: types.length, types });
+  return null; // to make eslint's consistent-return happy
+};
+
+// /pokemon/random (GET + HEAD):
+// Returns n number of random pokemon (default 1)
+const getPokemonRandom = (req, res, urlObj) => {
+  const q = urlObj && urlObj.query ? urlObj.query : {};
+  const nRaw = q.count;
+  let n = Number(nRaw);
+  if (Number.isNaN(n) || n <= 0) n = 1;
+  // cap to something reasonable
+  const limit = Math.min(50, Math.max(1, n));
+
+  // shuffle copy
+  const shuffled = pokedex.slice().sort(() => Math.random() - 0.5);
+  const data = shuffled.slice(0, limit);
+
+  respondJSON(req, res, 200, { count: data.length, data });
+  return null;
+};
 
 // /pokemon/update with POST:
 // edits an existing pokemon in memory and returns 204 on success
@@ -178,17 +202,20 @@ const updatePokemonPOST = (req, res) => {
   });
 
   const badRequest = (msg = 'Invalid request body', id = 'badRequest') => {
-    writeJSON(res, 400, { message: msg, id });
+    respondJSON(req, res, 400, { message: msg, id });
     return null;
   };
 
-  const notFound = (msg = 'Target resource not found', id = 'notFound') => {
-    writeJSON(res, 404, { message: msg, id });
+  const notFoundError = (
+    msg = 'Target resource not found',
+    id = 'notFound',
+  ) => {
+    respondJSON(req, res, 404, { message: msg, id });
     return null;
   };
 
   const success204 = () => {
-    writeHeadOnly(res, 204);
+    respondNoContent(res);
     return null;
   };
 
@@ -220,7 +247,7 @@ const updatePokemonPOST = (req, res) => {
 
       const idx = pokedex.findIndex((p) => String(p.id) === String(id));
       if (idx === -1) {
-        return notFound('No Pokémon found with that id :(');
+        return notFoundError('No Pokémon found with that id :(');
       }
 
       const updates = { ...bodyObj };
@@ -242,11 +269,11 @@ const updatePokemonPOST = (req, res) => {
 // requires: id (number) and name (string)
 const addPokemonPOST = (req, res) => {
   const badRequest = (msg = 'Invalid request body', id = 'badRequest') => {
-    writeJSON(res, 400, { message: msg, id });
+    respondJSON(req, res, 400, { message: msg, id });
     return null;
   };
   const success201 = (obj) => {
-    writeJSON(res, 201, obj);
+    respondJSON(req, res, 201, obj);
     return null;
   };
 
@@ -303,68 +330,14 @@ const addPokemonPOST = (req, res) => {
     .catch(() => badRequest('Unable to read request body.'));
 };
 
-// /types (GET/HEAD):
-// returns unique pokemon types from the dataset
-const getTypesGET = (req, res) => {
-  const seen = Object.create(null);
-
-  pokedex.forEach((p) => {
-    if (Array.isArray(p.type)) {
-      p.type.forEach((t) => {
-        const k = String(t);
-        if (k) seen[k] = true;
-      });
-    }
-  });
-
-  const types = Object.keys(seen).sort((a, b) => a.localeCompare(b));
-  writeJSON(res, 200, { count: types.length, types });
-  return null; // to make eslint's consistent-return happy
-};
-
-// /pokemon/random (GET/HEAD):
-// Returns n number of random pokemon (default 1)
-const getPokemonRandomGET = (req, res, urlObj) => {
-  const q = urlObj && urlObj.query ? urlObj.query : {};
-  const nRaw = q.count;
-  let n = Number(nRaw);
-  if (Number.isNaN(n) || n <= 0) n = 1;
-  // cap to something reasonable
-  const limit = Math.min(50, Math.max(1, n));
-
-  // shuffle copy
-  const shuffled = pokedex.slice().sort(() => Math.random() - 0.5);
-  const data = shuffled.slice(0, limit);
-
-  writeJSON(res, 200, { count: data.length, data });
-  return null;
-};
-
-const getPokemonRandomHEAD = (req, res) => {
-  writeHeadOnly(res, 200);
-  return null;
-};
-
-const getTypesHEAD = (req, res) => {
-  writeHeadOnly(res, 200);
-  return null;
-};
-
 module.exports = {
   getClient,
   getCSS,
-  notRealGET,
-  notRealHEAD,
-  notFoundGET,
-  notFoundHEAD,
-  getPokemonGET,
-  getPokemonHEAD,
-  getPokemonByGET,
-  getPokemonByHEAD,
+  notFound,
+  getPokemon,
+  getPokemonBy,
+  getTypes,
+  getPokemonRandom,
   updatePokemonPOST,
   addPokemonPOST,
-  getTypesGET,
-  getTypesHEAD,
-  getPokemonRandomGET,
-  getPokemonRandomHEAD,
 };

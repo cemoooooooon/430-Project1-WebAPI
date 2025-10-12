@@ -3,20 +3,13 @@ const url = require('url');
 const {
   getClient,
   getCSS,
-  notRealGET,
-  notRealHEAD,
-  notFoundGET,
-  notFoundHEAD,
-  getPokemonGET,
-  getPokemonHEAD,
-  getPokemonByGET,
-  getPokemonByHEAD,
+  notFound,
+  getPokemon,
+  getPokemonBy,
+  getTypes,
+  getPokemonRandom,
   updatePokemonPOST,
   addPokemonPOST,
-  getTypesGET,
-  getTypesHEAD,
-  getPokemonRandomGET,
-  getPokemonRandomHEAD,
 } = require('./responses');
 
 const PORT = process.env.PORT || 3000;
@@ -31,21 +24,27 @@ const onRequest = (request, response) => {
     return getCSS(request, response);
   }
 
-  if (pathname === '/notReal') {
-    if (method === 'GET') return notRealGET(request, response);
-    if (method === 'HEAD') return notRealHEAD(request, response);
-  }
-
   // /pokemon: query filtering by type / search / limit / offset
-  if (pathname === '/pokemon') {
-    if (method === 'GET') return getPokemonGET(request, response, parsed);
-    if (method === 'HEAD') return getPokemonHEAD(request, response);
+  if (pathname === '/pokemon' && (method === 'GET' || method === 'HEAD')) {
+    return getPokemon(request, response, parsed);
   }
 
   // /pokemon/by: id / name
-  if (pathname === '/pokemon/by') {
-    if (method === 'GET') return getPokemonByGET(request, response, parsed);
-    if (method === 'HEAD') return getPokemonByHEAD(request, response);
+  if (pathname === '/pokemon/by' && (method === 'GET' || method === 'HEAD')) {
+    return getPokemonBy(request, response, parsed);
+  }
+
+  // /types: return unique types from the dataset
+  if (pathname === '/types' && (method === 'GET' || method === 'HEAD')) {
+    return getTypes(request, response, parsed);
+  }
+
+  // /pokemon/random: return certain number of random pokes from the dataset
+  if (
+    pathname === '/pokemon/random'
+    && (method === 'GET' || method === 'HEAD')
+  ) {
+    return getPokemonRandom(request, response, parsed);
   }
 
   // /pokemon/update: updates in-memory dataset of pokemon found by id
@@ -58,21 +57,8 @@ const onRequest = (request, response) => {
     return addPokemonPOST(request, response);
   }
 
-  // /types: return unique types from the dataset
-  if (pathname === '/types') {
-    if (method === 'GET') return getTypesGET(request, response);
-    if (method === 'HEAD') return getTypesHEAD(request, response);
-  }
-
-  // /pokemon/random: return certain number of random pokes from the dataset
-  if (pathname === '/pokemon/random') {
-    if (method === 'GET') return getPokemonRandomGET(request, response, parsed);
-    if (method === 'HEAD') return getPokemonRandomHEAD(request, response);
-  }
-
   // any other page -> 404
-  if (method === 'HEAD') return notFoundHEAD(request, response);
-  return notFoundGET(request, response);
+  return notFound(request, response);
 };
 
 http.createServer(onRequest).listen(PORT, () => {
