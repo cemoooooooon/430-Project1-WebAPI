@@ -1,21 +1,191 @@
+:root {
+  --border: #ccc;
+  --bg-1: #f0f0f0;
+  --bg-2: #fafafa;
+  --bg-3: #f9f9f9;
+  --ink: #333;
+  --ink-muted: #555;
+  --brand: #007bff;
+}
+
+* { box-sizing: border-box; }
+
 html, body {
-  height: 100%;
-  width: 100%;
   margin: 0;
   padding: 0;
 }
 
-#top {
-  text-align: center;
-  margin: 0 auto;
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  color: var(--ink);
+  line-height: 1.45;
 }
 
-#top h1 {
-  font-size: 2em;
+/* app/doc nav header */
+.mainContent {
+  padding: 16px 16px 72px;
 }
 
-#content {
-  margin-top: 100px;
-  font-size: 2em;
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+h1 {
+  margin: 12px 0 16px;
+}
+
+/* collapsible layout for endpoints */
+.endpoint {
+  max-width: 950px;
+  margin: 0 0 18px 0;
+}
+
+.collapsible {
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background-color: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  max-width: 100%;
+}
+.collapsible:hover { background-color: #e0e0e0; }
+.collapsible:active { background-color: #d0d0d0; }
+
+.methods code {
+  background-color: #e7e7e7;
+  color: var(--brand);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 0.9em;
+  margin-left: 6px;
+}
+
+/* content is toggled by the js */
+.content {
+  display: none;
+  max-width: 100%;
+}
+
+.content-box {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  background-color: var(--bg-2);
+  margin-top: 10px;
+}
+
+/* text elements */
+.param {
+  margin-left: 20px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.example {
+  background-color: var(--bg-3);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 10px 0 14px 20px;
+}
+
+.example p { margin: 5px 0; }
+
+.note {
+  color: var(--ink-muted);
+  font-size: 0.95em;
+}
+
+/* results */
+code {
+  background-color: #333;
+  border-radius: 4px;
+  font-family: Consolas, "SFMono-Regular", Menlo, Monaco, "Liberation Mono", monospace;
+  padding: 2px 4px;
+  color: #f5f5f5;
+}
+
+.inline-pre {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  margin-left: 20px;
+}
+
+.inline-code {
+  background-color: #333;
+  border-radius: 4px;
+  font-family: Consolas, "SFMono-Regular", Menlo, Monaco, "Liberation Mono", monospace;
+  padding: 4px 6px;
+  color: #f5f5f5;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+pre.result {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+  border: 1px solid #ddd;
+  padding: 12px;
+  background-color: var(--bg-3);
+  border-radius: 6px;
+  overflow: auto;
+}
+
+/* try it sections */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+label {
+  min-width: 90px;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+button {
+  padding: 7px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+button:hover {
+  background: #f3f3f3;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.08) inset;
+}
+
+/* footer */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #f1f1f1;
+  padding: 10px 12px;
   text-align: center;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+  font-size: 0.95em;
 }

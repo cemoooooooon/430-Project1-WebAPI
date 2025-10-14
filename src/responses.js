@@ -53,14 +53,40 @@ const readBody = (req) => new Promise((resolve, reject) => {
   req.on('error', reject);
 });
 
+// helper for HTML
+const respondHTML = (req, res, status, htmlOrBuffer) => {
+  const buf = Buffer.isBuffer(htmlOrBuffer)
+    ? htmlOrBuffer
+    : Buffer.from(String(htmlOrBuffer), 'utf8');
+
+  res.writeHead(status, {
+    'Content-Type': 'text/html',
+    'Content-Length': buf.byteLength,
+  });
+
+  if (req.method === 'HEAD') return res.end(); // headers only
+  return res.end(buf);
+};
+
 const getClient = (req, res) => {
   try {
     const html = fs.readFileSync(path.join(__dirname, '../client/client.html'));
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(html);
+    return respondHTML(req, res, 200, html);
   } catch (err) {
-    respondJSON(req, res, 500, {
+    return respondJSON(req, res, 500, {
       message: 'Unable to load client.html',
+      id: 'internalError',
+    });
+  }
+};
+
+const getDocs = (req, res) => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, '../client/docs.html'));
+    return respondHTML(req, res, 200, html);
+  } catch (err) {
+    return respondJSON(req, res, 500, {
+      message: 'Unable to load docs.html',
       id: 'internalError',
     });
   }
@@ -332,6 +358,7 @@ const addPokemonPOST = (req, res) => {
 
 module.exports = {
   getClient,
+  getDocs,
   getCSS,
   notFound,
   getPokemon,

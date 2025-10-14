@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pokémon API Docs</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+  <div class="mainContent">
+    <a href="/">Test the Application Here</a><br />
+    <a href="/docs">View the Documentation Here</a>
+    <h1>Pokémon API Documentation</h1>
+
+    <!-- /pokemon -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>type</code> (optional) - A Pokémon type to filter by (case-insensitive), e.g. <code>fire</code>.</p>
+          <p class="param"><code>search</code> (optional) - Case-insensitive “name contains” search, e.g. <code>chu</code>.</p>
+          <p class="param"><code>limit</code> (optional) - Default <code>50</code>, max <code>100</code>.</p>
+          <p class="param"><code>offset</code> (optional) - Default <code>0</code>.</p>
+
+          <h3>Returns</h3>
+          <p class="param">A JSON object. Format:
+            <code>{ count: number, offset: number, limit: number, data: [Pokemon] }</code>
+          </p>
+
+          <h3>Examples</h3>
+          <section class="example">
+            <p>Request: <code>/pokemon?type=fire&amp;limit=3</code></p>
+            <p>Result:
+              <code>{ "count": 42, "offset": 0, "limit": 3, "data": [ /* 3 fire Pokémon */ ] }</code>
+            </p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon?search=chu</code></p>
+            <p>Result:
+              <code>{ "count": 2, "offset": 0, "limit": 50, "data": [ /* matches */ ] }</code>
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/by -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/by <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>id</code> (one of <code>id</code> or <code>name</code> is required) - Numeric id of the Pokémon.</p>
+          <p class="param"><code>name</code> (one of <code>id</code> or <code>name</code> is required) - Exact name match, case-insensitive.</p>
+
+          <h3>Returns</h3>
+          <p class="param">A JSON Pokémon object. Format:
+            <code>{ id: number, name: string, type?: [string], ... }</code>
+          </p>
+
+          <h3>Examples</h3>
+          <section class="example">
+            <p>Request: <code>/pokemon/by?id=25</code></p>
+            <p>Result: <code>{ "id": 25, "name": "Pikachu", "type": ["Electric"] }</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/by?name=pikachu</code></p>
+            <p>Result: <code>{ "id": 25, "name": "Pikachu", "type": ["Electric"] }</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/by</code></p>
+            <p>Result: <code>400 Error (Provide id or name)</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/by?id=999999</code></p>
+            <p>Result: <code>404 Error (Not found)</code></p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- /types -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /types <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param">No Supported Params</p>
+
+          <h3>Returns</h3>
+          <p class="param">A JSON object. Format:
+            <code>{ count: number, types: [string] }</code>
+          </p>
+
+          <h3>Example</h3>
+          <section class="example">
+            <p>Request: <code>/types</code></p>
+            <p>Result:
+              <code>{ "count": 18, "types": ["Bug","Dark","Dragon", ...] }</code>
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/random -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/random <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>count</code> (optional) - Number of random results. Defaults to <code>1</code>. Capped at <code>50</code>.</p>
+
+          <h3>Returns</h3>
+          <p class="param">A JSON object. Format:
+            <code>{ count: number, data: [Pokemon] }</code>
+          </p>
+
+          <h3>Examples</h3>
+          <section class="example">
+            <p>Request: <code>/pokemon/random</code></p>
+            <p>Result: <code>{ "count": 1, "data": [{ /* one random Pokémon */ }] }</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/random?count=3</code></p>
+            <p>Result: <code>{ "count": 3, "data": [{...},{...},{...}] }</code></p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/add -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/add <span class="methods"><code>POST</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Supported Body Formats</h3>
+          <p class="param"><code>application/json</code> <code>application/x-www-form-urlencoded</code></p>
+
+          <h3>Body Params</h3>
+          <p class="param"><code>id</code> Type: <code>number</code> - Required. Must be unique.</p>
+          <p class="param"><code>name</code> Type: <code>string</code> - Required.</p>
+          <p class="param"><code>type</code> Type: <code>string[]</code> (JSON) or comma string (form) - Optional.</p>
+
+          <h3>Returns</h3>
+          <p class="param">On success: <code>201</code> with
+            <code>{ message: string, data: Pokemon }</code>. On error: <code>400</code> with error JSON.</p>
+
+          <h3>Examples</h3>
+          <section class="example">
+            <p>Request: <code>/pokemon/add</code></p>
+            <p>Body (JSON): <code>{ "id": 999, "name": "mewthree", "type": ["psychic","legendary"] }</code></p>
+            <p>Result: <code>{ "message": "Pokémon created successfully!", "data": { "id": 999, "name": "mewthree", "type": ["psychic","legendary"] } }</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/add</code></p>
+            <p>Body (Form): <code>id=1000&amp;name=bulby&amp;type=grass, cute</code></p>
+            <p>Result: <code>{ "message": "Pokémon created successfully!", "data": { "id": 1000, "name": "bulby", "type": ["grass","cute"] } }</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/add</code></p>
+            <p>Body: <code>{ "name": "no-id" }</code></p>
+            <p>Result: <code>400 Error (Missing id)</code></p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/update -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/update <span class="methods"><code>POST</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Supported Body Formats</h3>
+          <p class="param"><code>application/json</code> <code>application/x-www-form-urlencoded</code></p>
+
+          <h3>Body Params</h3>
+          <p class="param"><code>id</code> Type: <code>number</code> - Required.</p>
+          <p class="param"><em>Any other field</em> - Updated value shallow-merged onto the record (e.g., <code>hp</code>).</p>
+
+          <h3>Returns</h3>
+          <p class="param">On success: <code>204 No Content</code>. Errors: <code>400</code> (bad request), <code>404</code> (id not found).</p>
+
+          <h3>Examples</h3>
+          <section class="example">
+            <p>Request: <code>/pokemon/update</code></p>
+            <p>Body: <code>{ "id": 25, "hp": 42 }</code></p>
+            <p>Result: <code>204 No Content</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/update</code></p>
+            <p>Body: <code>{ "hp": 42 }</code></p>
+            <p>Result: <code>400 Error (Missing id)</code></p>
+          </section>
+          <section class="example">
+            <p>Request: <code>/pokemon/update</code></p>
+            <p>Body: <code>{ "id": 123456, "hp": 42 }</code></p>
+            <p>Result: <code>404 Error (No Pokémon with that id)</code></p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Codes -->
+    <div class="endpoint">
+      <h2 class="collapsible">Status Codes</h2>
+      <div class="content">
+        <div class="content-box">
+          <p class="param"><code>200 OK</code> - Successful GET/HEAD.</p>
+          <p class="param"><code>201 Created</code> - Successful create at <code>/pokemon/add</code>.</p>
+          <p class="param"><code>204 No Content</code> - Successful update at <code>/pokemon/update</code>.</p>
+          <p class="param"><code>400 Bad Request</code> - Missing/invalid params or body.</p>
+          <p class="param"><code>404 Not Found</code> - Resource doesn’t exist (e.g., unknown id).</p>
+          <p class="param"><strong>HEAD behavior:</strong> Same headers (including <code>Content-Length</code>) as GET, but no body.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Pokémon API • IGME 430 Project 1
+  </footer>
+
+  <script>
+    // collapsible toggles
+    (function () {
+      var headers = document.getElementsByClassName('collapsible');
+      for (var i = 0; i < headers.length; i++) {
+        headers[i].addEventListener('click', function () {
+          var content = this.nextElementSibling;
+          if (!content) return;
+          var isOpen = content.style.display === 'block';
+          content.style.display = isOpen ? 'none' : 'block';
+        });
+      }
+      // start page with collapsed
+      var contents = document.getElementsByClassName('content');
+      for (var j = 0; j < contents.length; j++) {
+        contents[j].style.display = 'none';
+      }
+    })();
+  </script>
+</body>
+</html>

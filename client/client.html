@@ -2,281 +2,383 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Pokémon API Tester</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Pokémon API</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
+
 <body>
-  <nav>
-    <a href="/">Home</a>
-    <!-- no docs yet, but still placeholder -->
-    <a href="/docs">API Docs</a>
-  </nav>
-  <h1>Pokémon API Tester</h1>
-  <p class="note">This page sends <code>Accept: application/json</code>. POST can send either JSON or <code>application/x-www-form-urlencoded</code>.</p>
+  <div class="mainContent">
+    <a href="/">Test the Application Here</a><br />
+    <a href="/docs">View the Documentation Here</a>
 
-  <!-- GET /pokemon -->
-  <fieldset>
-    <legend>GET/HEAD /pokemon (filter, search, paging)</legend>
-    <div class="row">
-      <label for="type">type=</label>
-      <input id="type" type="text" placeholder="fire" />
-      <label for="search">search=</label>
-      <input id="search" type="text" placeholder="chu" />
-      <label for="limit">limit=</label>
-      <input id="limit" type="number" value="10" />
-      <label for="offset">offset=</label>
-      <input id="offset" type="number" value="0" />
-      <button id="btnPokemonGet">GET</button>
-      <button id="btnPokemonHead">HEAD</button>
+    <h1>Pokémon API Application</h1>
+
+    <!-- /pokemon -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>type</code> (optional) – filter by a type (e.g., <code>fire</code>).</p>
+          <p class="param"><code>search</code> (optional) – case-insensitive name contains.</p>
+          <p class="param"><code>limit</code> (optional) – default 50, max 100.</p>
+          <p class="param"><code>offset</code> (optional) – default 0.</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <label for="type">type=</label>
+              <input id="type" type="text" placeholder="fire" />
+              <label for="search">search=</label>
+              <input id="search" type="text" placeholder="chu" />
+              <label for="limit">limit=</label>
+              <input id="limit" type="number" value="10" />
+              <label for="offset">offset=</label>
+              <input id="offset" type="number" value="0" />
+              <button id="btnPokemonGet">GET</button>
+              <button id="btnPokemonHead">HEAD</button>
+            </div>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param">JSON object: <code>{ count: number, offset: number, limit: number, data: [Pokemon] }</code></p>
+        </div>
+      </div>
     </div>
-  </fieldset>
 
-  <!-- GET /pokemon/by -->
-  <fieldset>
-    <legend>GET/HEAD /pokemon/by (id or name)</legend>
-    <div class="row">
-      <label for="byId">id=</label>
-      <input id="byId" type="number" placeholder="25" />
-      <label for="byName">name=</label>
-      <input id="byName" type="text" placeholder="pikachu" />
-      <button id="btnByGet">GET</button>
-      <button id="btnByHead">HEAD</button>
+    <!-- /pokemon/by -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/by <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>id</code> (one of id or name is required)</p>
+          <p class="param"><code>name</code> (one of id or name is required)</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <label for="byId">id=</label>
+              <input id="byId" type="number" placeholder="25" />
+              <label for="byName">name=</label>
+              <input id="byName" type="text" placeholder="pikachu" />
+              <button id="btnByGet">GET</button>
+              <button id="btnByHead">HEAD</button>
+            </div>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param">JSON: single Pokémon object, or <code>400</code>/<code>404</code> error JSON.</p>
+        </div>
+      </div>
     </div>
-  </fieldset>
 
-  <!-- GET /types -->
-  <fieldset>
-    <legend>GET/HEAD /types (unique types)</legend>
-    <div class="row">
-      <button id="btnTypesGet">GET</button>
-      <button id="btnTypesHead">HEAD</button>
+    <!-- /types -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /types <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param">No supported params</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <button id="btnTypesGet">GET</button>
+              <button id="btnTypesHead">HEAD</button>
+            </div>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param">JSON: <code>{ count: number, types: [string] }</code></p>
+        </div>
+      </div>
     </div>
-  </fieldset>
 
-  <!-- GET /pokemon/random -->
-<fieldset>
-  <legend>GET/HEAD /pokemon/random (random selection)</legend>
-  <div class="row">
-    <label for="randCount">count=</label>
-    <input id="randCount" type="number" value="1" min="1" />
-    <button id="btnRandomGet">GET</button>
-    <button id="btnRandomHead">HEAD</button>
+    <!-- /pokemon/random -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/random <span class="methods"><code>GET</code> <code>HEAD</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Query Params</h3>
+          <p class="param"><code>count</code> (optional) – default 1, capped (e.g., 50).</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <label for="randCount">count=</label>
+              <input id="randCount" type="number" value="1" min="1" />
+              <button id="btnRandomGet">GET</button>
+              <button id="btnRandomHead">HEAD</button>
+            </div>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param">JSON: <code>{ count: number, data: [Pokemon] }</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/add -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/add <span class="methods"><code>POST</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Supported Body Formats</h3>
+          <p class="param"><code>application/json</code> <code>application/x-www-form-urlencoded</code></p>
+
+          <h3>Body Params</h3>
+          <p class="param"><code>id</code> Type: <code>number</code> – required.</p>
+          <p class="param"><code>name</code> Type: <code>string</code> – required.</p>
+          <p class="param"><code>type</code> Type: <code>string[]</code> or comma string – optional.</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <label for="addId">id *</label>
+              <input id="addId" type="number" placeholder="152" />
+              <label for="addName">name *</label>
+              <input id="addName" type="text" placeholder="mewthree" />
+            </div>
+            <div class="row">
+              <label for="addType">type</label>
+              <input id="addType" type="text" placeholder="electric" />
+              <select id="addContentType">
+                <option value="json">application/json</option>
+                <option value="form">application/x-www-form-urlencoded</option>
+              </select>
+              <button id="btnAdd">POST</button>
+            </div>
+            <p class="param">JSON sends <code>type</code> as an array; form sends it as a comma-separated string.</p>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param">JSON: <code>{ message: string, data: Pokemon }</code> or <code>400</code> error JSON.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- /pokemon/update -->
+    <div class="endpoint">
+      <h2 class="collapsible">
+        /pokemon/update <span class="methods"><code>POST</code></span>
+      </h2>
+      <div class="content">
+        <div class="content-box">
+          <h3>Supported Body Formats</h3>
+          <p class="param"><code>application/json</code> <code>application/x-www-form-urlencoded</code></p>
+
+          <h3>Body Params</h3>
+          <p class="param"><code>id</code> Type: <code>number</code> – required (record to edit).</p>
+          <p class="param"><em>Any other field</em> – updated value (e.g., <code>hp</code>).</p>
+
+          <h3>Try it</h3>
+          <section class="example">
+            <div class="row">
+              <label for="updId">id *</label>
+              <input id="updId" type="number" placeholder="25" />
+              <label for="updField">field *</label>
+              <input id="updField" type="text" placeholder="hp" />
+              <label for="updValue">value *</label>
+              <input id="updValue" type="text" placeholder="42" />
+              <select id="updContentType">
+                <option value="json">application/json</option>
+                <option value="form">application/x-www-form-urlencoded</option>
+              </select>
+              <button id="btnUpdate">POST</button>
+            </div>
+          </section>
+
+          <h3>Returns</h3>
+          <p class="param"><code>204 No Content</code> on success; <code>400</code>/<code>404</code> error JSON otherwise.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Response</h2>
+    <pre id="out" class="result">—</pre>
   </div>
-  <p class="note">If omitted or invalid, the server defaults to 1. The server count caps at 50.</p>
-</fieldset>
 
-
-  <!-- POST /pokemon/add -->
-  <fieldset>
-    <legend>POST /pokemon/add (create)</legend>
-    <div class="row">
-      <label for="addId">id *</label>
-      <input id="addId" type="number" placeholder="152" />
-      <label for="addName">name *</label>
-      <input id="addName" type="text" placeholder="mewthree" />
-    </div>
-    <div class="row">
-      <label for="addType">type</label>
-      <input id="addType" type="text" placeholder="electric" />
-      <select id="addContentType">
-        <option value="json">application/json</option>
-        <option value="form">application/x-www-form-urlencoded</option>
-      </select>
-      <button id="btnAdd">POST</button>
-    </div>
-    <p class="note">For JSON, types are sent as an array; for form, types are sent as a comma-separated string.</p>
-  </fieldset>
-
-  <!-- POST /pokemon/update -->
-  <fieldset>
-    <legend>POST /pokemon/update (edit existing → 204)</legend>
-    <div class="row">
-      <label for="updId">id *</label>
-      <input id="updId" type="number" placeholder="25" />
-      <label for="updField">field *</label>
-      <input id="updField" type="text" placeholder="hp" />
-      <label for="updValue">value *</label>
-      <input id="updValue" type="text" placeholder="42" />
-      <select id="updContentType">
-        <option value="json">application/json</option>
-        <option value="form">application/x-www-form-urlencoded</option>
-      </select>
-      <button id="btnUpdate">POST</button>
-    </div>
-  </fieldset>
-
-  <h2>Response</h2>
-  <pre id="out">—</pre>
+  <footer>
+    Pokémon API • IGME 430 Project 1 Example
+  </footer>
 
   <script>
-    const $ = (id) => document.getElementById(id);
-    const out = $('out');
+    // Collapsible behavior like the example
+    (function () {
+      var headers = document.getElementsByClassName('collapsible');
+      for (var i = 0; i < headers.length; i++) {
+        headers[i].addEventListener('click', function () {
+          var content = this.nextElementSibling;
+          if (!content) return;
+          var isOpen = content.style.display === 'block';
+          content.style.display = isOpen ? 'none' : 'block';
+        });
+      }
+      // Start with everything collapsed
+      var contents = document.getElementsByClassName('content');
+      for (var j = 0; j < contents.length; j++) contents[j].style.display = 'none';
+    })();
 
-    const show = async (res) => {
-      const headers = {};
-      res.headers.forEach((v, k) => { headers[k] = v; });
+    // ---------- Existing tester logic (unchanged) ----------
+    var $ = function (id) { return document.getElementById(id); };
+    var out = $('out');
 
-      let bodyText = '';
-      try { bodyText = await res.text(); } catch (e) { bodyText = `<read error: ${e?.message || e}>`; }
+    var show = function (res) {
+      var headers = {};
+      res.headers.forEach(function (v, k) { headers[k] = v; });
 
-      let parsed;
-      try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch { parsed = bodyText; }
+      res.text().then(function (bodyText) {
+        var parsed;
+        try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch (e) { parsed = bodyText; }
 
-      out.textContent = JSON.stringify({
-        url: res.url,
-        ok: res.ok,
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-        body: parsed,
-      }, null, 2);
+        out.textContent = JSON.stringify({
+          url: res.url,
+          ok: res.ok,
+          status: res.status,
+          statusText: res.statusText,
+          headers: headers,
+          body: parsed
+        }, null, 2);
+      }).catch(function (e) {
+        out.textContent = 'Read error: ' + (e && e.message ? e.message : e);
+      });
     };
 
-    const GET  = (url) => fetch(url, { method: 'GET',  headers: { 'Accept': 'application/json' }});
-    const HEAD = (url) => fetch(url, { method: 'HEAD', headers: { 'Accept': 'application/json' }});
+    var GET  = function (url) { return fetch(url, { method: 'GET',  headers: { 'Accept': 'application/json' } }); };
+    var HEAD = function (url) { return fetch(url, { method: 'HEAD', headers: { 'Accept': 'application/json' } }); };
 
-    const POST_JSON = (url, obj) => fetch(url, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify(obj || {})
-    });
+    var POST_JSON = function (url, obj) {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj || {})
+      });
+    };
 
-    const POST_FORM = (url, obj) => fetch(url, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(obj || {}).toString()
-    });
+    var POST_FORM = function (url, obj) {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(obj || {}).toString()
+      });
+    };
 
     // /pokemon
-    $('btnPokemonGet').onclick = async () => {
-      const qs = new URLSearchParams();
-      const type   = $('type').value.trim();
-      const search = $('search').value.trim();
-      const limit  = $('limit').value;
-      const offset = $('offset').value;
+    $('btnPokemonGet').onclick = function () {
+      var qs = new URLSearchParams();
+      var type   = $('type').value.trim();
+      var search = $('search').value.trim();
+      var limit  = $('limit').value;
+      var offset = $('offset').value;
       if (type) qs.set('type', type);
       if (search) qs.set('search', search);
       if (limit !== '') qs.set('limit', limit);
       if (offset !== '') qs.set('offset', offset);
 
-      const res = await GET(`/pokemon${qs.toString() ? `?${qs}` : ''}`);
-      show(res);
+      GET('/pokemon' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
-    $('btnPokemonHead').onclick = async () => {
-      const qs = new URLSearchParams();
-      const type   = $('type').value.trim();
-      const search = $('search').value.trim();
-      const limit  = $('limit').value;
-      const offset = $('offset').value;
+    $('btnPokemonHead').onclick = function () {
+      var qs = new URLSearchParams();
+      var type   = $('type').value.trim();
+      var search = $('search').value.trim();
+      var limit  = $('limit').value;
+      var offset = $('offset').value;
       if (type) qs.set('type', type);
       if (search) qs.set('search', search);
       if (limit !== '') qs.set('limit', limit);
       if (offset !== '') qs.set('offset', offset);
 
-      const res = await HEAD(`/pokemon${qs.toString() ? `?${qs}` : ''}`);
-      show(res);
+      HEAD('/pokemon' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
     // /pokemon/by
-    $('btnByGet').onclick = async () => {
-      const id   = $('byId').value.trim();
-      const name = $('byName').value.trim();
-      const qs = new URLSearchParams();
+    $('btnByGet').onclick = function () {
+      var id   = $('byId').value.trim();
+      var name = $('byName').value.trim();
+      var qs = new URLSearchParams();
       if (id) qs.set('id', id);
       if (name) qs.set('name', name);
-      const res = await GET(`/pokemon/by${qs.toString() ? `?${qs}` : ''}`);
-      show(res);
+      GET('/pokemon/by' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
-    $('btnByHead').onclick = async () => {
-      const id   = $('byId').value.trim();
-      const name = $('byName').value.trim();
-      const qs = new URLSearchParams();
+    $('btnByHead').onclick = function () {
+      var id   = $('byId').value.trim();
+      var name = $('byName').value.trim();
+      var qs = new URLSearchParams();
       if (id) qs.set('id', id);
       if (name) qs.set('name', name);
-      const res = await HEAD(`/pokemon/by${qs.toString() ? `?${qs}` : ''}`);
-      show(res);
+      HEAD('/pokemon/by' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
     // /types
-    $('btnTypesGet').onclick = async () => {
-      const res = await GET('/types');
-      show(res);
-    };
-    $('btnTypesHead').onclick = async () => {
-      const res = await HEAD('/types');
-      show(res);
-    };
+    $('btnTypesGet').onclick = function () { GET('/types').then(show); };
+    $('btnTypesHead').onclick = function () { HEAD('/types').then(show); };
 
     // /pokemon/random
-  document.getElementById('btnRandomGet').onclick = async () => {
-    var n = document.getElementById('randCount').value;
-    var qs = new URLSearchParams();
-    if (n !== '') qs.set('count', n);
-    var res = await GET('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : ''));
-    show(res);
-  };
+    document.getElementById('btnRandomGet').onclick = function () {
+      var n = document.getElementById('randCount').value;
+      var qs = new URLSearchParams();
+      if (n !== '') qs.set('count', n);
+      GET('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
+    };
 
-  document.getElementById('btnRandomHead').onclick = async () => {
-    var n = document.getElementById('randCount').value;
-    var qs = new URLSearchParams();
-    if (n !== '') qs.set('count', n);
-    var res = await HEAD('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : ''));
-    show(res);
-  };
+    document.getElementById('btnRandomHead').onclick = function () {
+      var n = document.getElementById('randCount').value;
+      var qs = new URLSearchParams();
+      if (n !== '') qs.set('count', n);
+      HEAD('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
+    };
 
-    // POST /pokemon/add
-    $('btnAdd').onclick = async () => {
-      const id   = $('addId').value.trim();
-      const name = $('addName').value.trim();
-      const type = $('addType').value.trim();
-      const mode = $('addContentType').value;
+    // /pokemon/add
+    $('btnAdd').onclick = function () {
+      var id   = $('addId').value.trim();
+      var name = $('addName').value.trim();
+      var type = $('addType').value.trim();
+      var mode = $('addContentType').value;
 
-      if (!id || !name) {
-        out.textContent = 'Please provide id and name.';
-        return;
-      }
+      if (!id || !name) { out.textContent = 'Please provide id and name.'; return; }
 
       if (mode === 'json') {
-        const payload = { id: Number(id), name };
-        if (type) {
-          payload.type = type.split(',').map(s => s.trim()).filter(Boolean);
-        }
-        const res = await POST_JSON('/pokemon/add', payload);
-        show(res);
+        var payload = { id: Number(id), name: name };
+        if (type) payload.type = type.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        POST_JSON('/pokemon/add', payload).then(show);
       } else {
-        // urlencoded: types as comma separated string
-        const payload = { id, name };
-        if (type) payload.type = type;
-        const res = await POST_FORM('/pokemon/add', payload);
-        show(res);
+        var payload2 = { id: id, name: name };
+        if (type) payload2.type = type;
+        POST_FORM('/pokemon/add', payload2).then(show);
       }
     };
 
-    // POST /pokemon/update
-    $('btnUpdate').onclick = async () => {
-      const id    = $('updId').value.trim();
-      const field = $('updField').value.trim();
-      const value = $('updValue').value.trim();
-      const mode  = $('updContentType').value;
+    // /pokemon/update
+    $('btnUpdate').onclick = function () {
+      var id    = $('updId').value.trim();
+      var field = $('updField').value.trim();
+      var value = $('updValue').value.trim();
+      var mode  = $('updContentType').value;
 
-      if (!id || !field) {
-        out.textContent = 'Provide id and at least one field/value.';
-        return;
-      }
+      if (!id || !field) { out.textContent = 'Provide id and at least one field/value.'; return; }
 
       if (mode === 'json') {
-        const payload = { id: Number(id) };
-        // try number, else send as string
-        const n = Number(value);
+        var payload = { id: Number(id) };
+        var n = Number(value);
         payload[field] = Number.isNaN(n) ? value : n;
-        const res = await POST_JSON('/pokemon/update', payload);
-        show(res);
+        POST_JSON('/pokemon/update', payload).then(show);
       } else {
-        const payload = { id, [field]: value };
-        const res = await POST_FORM('/pokemon/update', payload);
-        show(res);
+        var payload2 = { id: id };
+        payload2[field] = value;
+        POST_FORM('/pokemon/update', payload2).then(show);
       }
     };
   </script>

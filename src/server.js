@@ -2,6 +2,7 @@ const http = require('http');
 const url = require('url');
 const {
   getClient,
+  getDocs,
   getCSS,
   notFound,
   getPokemon,
@@ -19,7 +20,14 @@ const onRequest = (request, response) => {
   const { pathname } = parsed;
   const method = request.method.toUpperCase();
 
-  if (pathname === '/' && method === 'GET') return getClient(request, response);
+  if (pathname === '/' && (method === 'GET' || method === 'HEAD')) {
+    return getClient(request, response);
+  }
+
+  if (pathname === '/docs' && (method === 'GET' || method === 'HEAD')) {
+    return getDocs(request, response);
+  }
+
   if (pathname === '/style.css' && method === 'GET') {
     return getCSS(request, response);
   }
