@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Pokémon API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
 </head>
 
@@ -205,6 +206,9 @@
       </div>
     </div>
 
+    <h2>Results</h2>
+<div id="grid" class="cards hidden"></div>
+
     <h2>Response</h2>
     <pre id="out" class="result">—</pre>
   </div>
@@ -214,51 +218,120 @@
   </footer>
 
   <script>
-    // Collapsible behavior like the example
+    // collapsible headers
     (function () {
-      var headers = document.getElementsByClassName('collapsible');
-      for (var i = 0; i < headers.length; i++) {
+      const headers = document.getElementsByClassName('collapsible');
+      for (let i = 0; i < headers.length; i++) {
         headers[i].addEventListener('click', function () {
-          var content = this.nextElementSibling;
+          const content = this.nextElementSibling;
           if (!content) return;
-          var isOpen = content.style.display === 'block';
+          const isOpen = content.style.display === 'block';
           content.style.display = isOpen ? 'none' : 'block';
         });
       }
-      // Start with everything collapsed
-      var contents = document.getElementsByClassName('content');
-      for (var j = 0; j < contents.length; j++) contents[j].style.display = 'none';
+      // start with everything collapsed
+      const contents = document.getElementsByClassName('content');
+      for (let j = 0; j < contents.length; j++) contents[j].style.display = 'none';
     })();
+    
+    // request outputs
+    const $ = function (id) { return document.getElementById(id); };
+    const out = $('out');
 
-    // ---------- Existing tester logic (unchanged) ----------
-    var $ = function (id) { return document.getElementById(id); };
-    var out = $('out');
+    const grid = $('grid');
 
-    var show = function (res) {
-      var headers = {};
-      res.headers.forEach(function (v, k) { headers[k] = v; });
+// display pokemon image (prefer p.img, else fetch from pokeAPI)
+/**
+ * while it only uses it as a back-up resource for just the sprites,
+ * Image URL references:
+ *   PokeAPI sprites (raw GitHub path; historical community convention):
+ *     https://github.com/PokeAPI/pokeapi/issues/346
+ * 
+ *   PokeAPI main site:
+ *     https://pokeapi.co/
+ */
 
-      res.text().then(function (bodyText) {
-        var parsed;
-        try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch (e) { parsed = bodyText; }
+const imgFor = (p) => {
+  if (p && p.img) return p.img;
+  if (p && (p.id || p.num)) {
+    const idNum = Number(p.id || p.num);
+    if (!Number.isNaN(idNum)) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${idNum}.png`;
+    }
+  }
+  return '';
+};
 
-        out.textContent = JSON.stringify({
-          url: res.url,
-          ok: res.ok,
-          status: res.status,
-          statusText: res.statusText,
-          headers: headers,
-          body: parsed
-        }, null, 2);
-      }).catch(function (e) {
-        out.textContent = 'Read error: ' + (e && e.message ? e.message : e);
-      });
-    };
+const typeBadge = (t) => `<span class="type">${String(t)}</span>`;
 
-    var GET  = function (url) { return fetch(url, { method: 'GET',  headers: { 'Accept': 'application/json' } }); };
-    var HEAD = function (url) { return fetch(url, { method: 'HEAD', headers: { 'Accept': 'application/json' } }); };
+const card = (p) => {
+  const img = imgFor(p);
+  const types = Array.isArray(p.type) ? p.type.map(typeBadge).join('') : '';
+  return `
+    <article class="card">
+      ${img ? `<img alt="${p.name}" loading="lazy" src="${img}">` : `<div class="no-img">No image</div>`}
+      <div class="card-body">
+        <div class="card-top">
+          <h3 class="poke-name">${p.name ?? '(unknown)'}</h3>
+          <span class="poke-id">#${p.num ?? String(p.id ?? '?').padStart(3,'0')}</span>
+        </div>
+        <div class="types">${types}</div>
+      </div>
+    </article>
+  `;
+};
 
-    var POST_JSON = function (url, obj) {
+const renderGrid = (payload) => {
+  // HEAD or non-JSON -> hide grid
+  if (!payload) { grid.innerHTML = ''; grid.classList.add('hidden'); return; }
+
+  if (Array.isArray(payload.data)) {
+    grid.innerHTML = payload.data.length
+      ? payload.data.map(card).join('')
+      : '<div class="empty">No Pokémon found.</div>';
+    grid.classList.remove('hidden');
+    return;
+  }
+
+  if (payload && typeof payload === 'object' && payload.name) {
+    grid.innerHTML = card(payload);
+    grid.classList.remove('hidden');
+    return;
+  }
+
+  grid.innerHTML = '';
+  grid.classList.add('hidden');
+};
+
+ const show = async (res) => {
+  const headers = {};
+  res.headers.forEach((v, k) => { headers[k] = v; });
+
+  let bodyText = '';
+  try { bodyText = await res.text(); } catch (e) { bodyText = `<read error: ${e?.message || e}>`; }
+
+  let parsed = null;
+  try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch { parsed = null; }
+
+  // fill/clear the grid
+  renderGrid(parsed);
+
+  // raw JSON response
+  out.textContent = JSON.stringify({
+    url: res.url,
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+    body: parsed ?? bodyText,
+  }, null, 2);
+};
+
+
+    const GET  = function (url) { return fetch(url, { method: 'GET',  headers: { 'Accept': 'application/json' } }); };
+    const HEAD = function (url) { return fetch(url, { method: 'HEAD', headers: { 'Accept': 'application/json' } }); };
+
+    const POST_JSON = function (url, obj) {
       return fetch(url, {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -266,7 +339,7 @@
       });
     };
 
-    var POST_FORM = function (url, obj) {
+    const POST_FORM = function (url, obj) {
       return fetch(url, {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -276,11 +349,11 @@
 
     // /pokemon
     $('btnPokemonGet').onclick = function () {
-      var qs = new URLSearchParams();
-      var type   = $('type').value.trim();
-      var search = $('search').value.trim();
-      var limit  = $('limit').value;
-      var offset = $('offset').value;
+      const qs = new URLSearchParams();
+      const type   = $('type').value.trim();
+      const search = $('search').value.trim();
+      const limit  = $('limit').value;
+      const offset = $('offset').value;
       if (type) qs.set('type', type);
       if (search) qs.set('search', search);
       if (limit !== '') qs.set('limit', limit);
@@ -290,11 +363,11 @@
     };
 
     $('btnPokemonHead').onclick = function () {
-      var qs = new URLSearchParams();
-      var type   = $('type').value.trim();
-      var search = $('search').value.trim();
-      var limit  = $('limit').value;
-      var offset = $('offset').value;
+      const qs = new URLSearchParams();
+      const type   = $('type').value.trim();
+      const search = $('search').value.trim();
+      const limit  = $('limit').value;
+      const offset = $('offset').value;
       if (type) qs.set('type', type);
       if (search) qs.set('search', search);
       if (limit !== '') qs.set('limit', limit);
@@ -305,18 +378,18 @@
 
     // /pokemon/by
     $('btnByGet').onclick = function () {
-      var id   = $('byId').value.trim();
-      var name = $('byName').value.trim();
-      var qs = new URLSearchParams();
+      const id   = $('byId').value.trim();
+      const name = $('byName').value.trim();
+      const qs = new URLSearchParams();
       if (id) qs.set('id', id);
       if (name) qs.set('name', name);
       GET('/pokemon/by' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
     $('btnByHead').onclick = function () {
-      var id   = $('byId').value.trim();
-      var name = $('byName').value.trim();
-      var qs = new URLSearchParams();
+      const id   = $('byId').value.trim();
+      const name = $('byName').value.trim();
+      const qs = new URLSearchParams();
       if (id) qs.set('id', id);
       if (name) qs.set('name', name);
       HEAD('/pokemon/by' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
@@ -328,34 +401,34 @@
 
     // /pokemon/random
     document.getElementById('btnRandomGet').onclick = function () {
-      var n = document.getElementById('randCount').value;
-      var qs = new URLSearchParams();
+      const n = document.getElementById('randCount').value;
+      const qs = new URLSearchParams();
       if (n !== '') qs.set('count', n);
       GET('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
     document.getElementById('btnRandomHead').onclick = function () {
-      var n = document.getElementById('randCount').value;
-      var qs = new URLSearchParams();
+      const n = document.getElementById('randCount').value;
+      const qs = new URLSearchParams();
       if (n !== '') qs.set('count', n);
       HEAD('/pokemon/random' + (qs.toString() ? ('?' + qs.toString()) : '')).then(show);
     };
 
     // /pokemon/add
     $('btnAdd').onclick = function () {
-      var id   = $('addId').value.trim();
-      var name = $('addName').value.trim();
-      var type = $('addType').value.trim();
-      var mode = $('addContentType').value;
+      const id   = $('addId').value.trim();
+      const name = $('addName').value.trim();
+      const type = $('addType').value.trim();
+      const mode = $('addContentType').value;
 
       if (!id || !name) { out.textContent = 'Please provide id and name.'; return; }
 
       if (mode === 'json') {
-        var payload = { id: Number(id), name: name };
+        const payload = { id: Number(id), name: name };
         if (type) payload.type = type.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         POST_JSON('/pokemon/add', payload).then(show);
       } else {
-        var payload2 = { id: id, name: name };
+        const payload2 = { id: id, name: name };
         if (type) payload2.type = type;
         POST_FORM('/pokemon/add', payload2).then(show);
       }
@@ -363,20 +436,20 @@
 
     // /pokemon/update
     $('btnUpdate').onclick = function () {
-      var id    = $('updId').value.trim();
-      var field = $('updField').value.trim();
-      var value = $('updValue').value.trim();
-      var mode  = $('updContentType').value;
+      const id    = $('updId').value.trim();
+      const field = $('updField').value.trim();
+      const value = $('updValue').value.trim();
+      const mode  = $('updContentType').value;
 
       if (!id || !field) { out.textContent = 'Provide id and at least one field/value.'; return; }
 
       if (mode === 'json') {
-        var payload = { id: Number(id) };
-        var n = Number(value);
+        const payload = { id: Number(id) };
+        const n = Number(value);
         payload[field] = Number.isNaN(n) ? value : n;
         POST_JSON('/pokemon/update', payload).then(show);
       } else {
-        var payload2 = { id: id };
+        const payload2 = { id: id };
         payload2[field] = value;
         POST_FORM('/pokemon/update', payload2).then(show);
       }
